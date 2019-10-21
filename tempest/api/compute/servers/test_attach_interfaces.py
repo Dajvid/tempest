@@ -403,11 +403,12 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             # Lets remove any floating IP from the list and check count of IPs
             self.seen_ips_counter += len(_ips) - self.seen_ips_counter
             _fips = _get_server_floating_ips()
-            _ips = [_ip for _ip in _ips if _ip not in _fips]
+            _filtered_ips = [_ip for _ip in _ips if _ip not in _fips]
             LOG.debug("Wait for IP increase. Fixed IPs still associated to "
                       "the server %(id)s: %(ips)s",
-                      {'id': server['id'], 'ips': _ips})
-            return len(_ips) == original_ip_count + 1
+                      {'id': server['id'], 'ips': _filtered_ips})
+            # Number of filtered IPs must be considered
+            return len(_filtered_ips) == original_ip_count - (len(_ips) - len(_filtered_ips)) + 1
 
         self.seen_ips_counter = 0
         if not test_utils.call_until_true(
