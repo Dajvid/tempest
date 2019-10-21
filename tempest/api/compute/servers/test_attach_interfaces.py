@@ -340,6 +340,7 @@ class AttachInterfacesTestJSON(AttachInterfacesTestBase):
 
 class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
     max_microversion = '2.43'
+    seen_ips_counter = 0
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('c7e0e60b-ee45-43d0-abeb-8596fd42a2f9')
@@ -395,11 +396,12 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             LOG.debug("Wait for IP increase. All IPs still associated to "
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
-            if len(_ips) == original_ip_count + 1:
-                return True
-            elif len(_ips) == original_ip_count:
+            # If no new IP popped up, just return False
+            if (len(_ips) == original_ip_count
+                    or len(_ips) == self.seen_ips_counter):
                 return False
-            # If not, lets remove any floating IP from the list and check again
+            # Lets remove any floating IP from the list and check count of IPs
+            self.seen_ips_counter += len(_ips) - self.seen_ips_counter
             _fips = _get_server_floating_ips()
             _ips = [_ip for _ip in _ips if _ip not in _fips]
             LOG.debug("Wait for IP increase. Fixed IPs still associated to "
@@ -407,6 +409,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       {'id': server['id'], 'ips': _ips})
             return len(_ips) == original_ip_count + 1
 
+        self.seen_ips_counter = 0
         if not test_utils.call_until_true(
                 _wait_for_ip_increase, CONF.compute.build_timeout,
                 CONF.compute.build_interval):
