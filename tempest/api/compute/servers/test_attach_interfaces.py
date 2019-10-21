@@ -388,7 +388,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                         _floating_ips.append(_ip['addr'])
             return _floating_ips
 
-        def _wait_for_ip_increase(seen_ips_counter):
+        def _wait_for_ip_increase():
             _addresses = self.os_primary.servers_client.list_addresses(
                 server['id'])['addresses']
             _ips = [addr['addr'] for addr in list(_addresses.values())[0]]
@@ -397,13 +397,9 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       {'id': server['id'], 'ips': _ips})
             if len(_ips) == original_ip_count + 1:
                 return True
-            # If there's no new ip since last check, just return False instead
-            # of trying to filter floating ips
-            if seen_ips_counter == original_ip_count:
+            elif len(_ips) == original_ip_count:
                 return False
-            # If new IP popped up, but count of IPs is still not as expected,
-            # lets remove any floating IP from the list and check again
-            seen_ips_counter += len(_ips) - seen_ips_counter
+            # If not, lets remove any floating IP from the list and check again
             _fips = _get_server_floating_ips()
             _ips = [_ip for _ip in _ips if _ip not in _fips]
             LOG.debug("Wait for IP increase. Fixed IPs still associated to "
@@ -411,10 +407,9 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       {'id': server['id'], 'ips': _ips})
             return len(_ips) == original_ip_count + 1
 
-        seen_ips_counter = 0
         if not test_utils.call_until_true(
                 _wait_for_ip_increase, CONF.compute.build_timeout,
-                CONF.compute.build_interval, seen_ips_counter):
+                CONF.compute.build_interval):
             raise lib_exc.TimeoutException(
                 'Timed out while waiting for IP count to increase.')
 
