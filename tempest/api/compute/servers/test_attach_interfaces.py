@@ -355,17 +355,6 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                 not CONF.network.shared_physical_network):
             raise self.skipException("Only owner network supports "
                                      "creating interface by fixed ip.")
-
-        def _get_server_floating_ips():
-            _floating_ips = []
-            _server = self.os_primary.servers_client.show_server(
-                server['id'])['server']
-            for _ip_set in _server['addresses']:
-                for _ip in _server['addresses'][_ip_set]:
-                    if _ip['OS-EXT-IPS:type'] == 'floating':
-                        _floating_ips.append(_ip['addr'])
-            return _floating_ips
-
         # Add and Remove the fixed IP to server.
         server, ifs = self._create_server_get_interfaces()
         original_interface_count = len(ifs)  # This is the number of ports.
@@ -380,6 +369,17 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         self.assertEqual(1, len(addresses), addresses)  # number of networks
         # Keep track of the original addresses so we can know which IP is new.
         original_ips = [addr['addr'] for addr in list(addresses.values())[0]]
+
+        def _get_server_floating_ips():
+            _floating_ips = []
+            _server = self.os_primary.servers_client.show_server(
+                server['id'])['server']
+            for _ip_set in _server['addresses']:
+                for _ip in _server['addresses'][_ip_set]:
+                    if _ip['OS-EXT-IPS:type'] == 'floating':
+                        _floating_ips.append(_ip['addr'])
+            return _floating_ips
+
         # Remove floating IPs from the list, we don't really care about them
         # in this test and they would only compliate things later
         fips = _get_server_floating_ips()
@@ -401,8 +401,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
             # If no new IP popped up, just return False
-            if (len(_ips) == original_ip_count
-                    or len(_ips) == self.seen_ips_counter):
+            if (len(_ips) == self.seen_ips_counter):
                 return False
             # Lets remove any floating IP from the list and check count of IPs
             self.seen_ips_counter += len(_ips) - self.seen_ips_counter
@@ -444,8 +443,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
             # If IPs didn't changed yet, just skip this iteration
-            if (len(_ips) == original_ip_count + 1 or
-                    len(_ips) == self.seen_ips_counter):
+            if (len(_ips) == self.seen_ips_counter):
                 return False
             # If something changed, filter out floating IPs and check
             # count of IPs
