@@ -370,6 +370,10 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         self.assertEqual(1, len(addresses), addresses)  # number of networks
         # Keep track of the original addresses so we can know which IP is new.
         original_ips = [addr['addr'] for addr in list(addresses.values())[0]]
+        # Remove floating IPs from the list, we don't really care about them
+        # in this test and they would only compliate things later
+        fips = _get_server_floating_ips()
+        original_ips = [_ip for _ip in original_ips if _ip not in fips]
         original_ip_count = len(original_ips)
         self.assertGreater(original_ip_count, 0, addresses)  # at least 1
         network_id = ifs[0]['net_id']
@@ -403,14 +407,11 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             # Lets remove any floating IP from the list and check count of IPs
             self.seen_ips_counter += len(_ips) - self.seen_ips_counter
             _fips = _get_server_floating_ips()
-            _filtered_ips = [_ip for _ip in _ips if _ip not in _fips]
+            _ips = [_ip for _ip in _ips if _ip not in _fips]
             LOG.debug("Wait for IP increase. Fixed IPs still associated to "
                       "the server %(id)s: %(ips)s",
-                      {'id': server['id'], 'ips': _filtered_ips})
-            # Number of filtered IPs must be considered
-            filtered_count = len(_ips) - len(_filtered_ips)
-            expected_count = original_ip_count - filtered_count + 1
-            return len(_filtered_ips) == expected_count
+                      {'id': server['id'], 'ips': _ips})
+            return len(_ips) == original_ip_count + 1
 
         self.seen_ips_counter = 0
         if not test_utils.call_until_true(
@@ -442,9 +443,13 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             LOG.debug("Wait for IP decrease. All IPs still associated to "
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
-            if len(_ips) == original_ip_count:
-                return True
-            # If not, lets remove any floating IP from the list and check again
+            # If IPs didn't changed yet, just skip this iteration
+            if (len(_ips) == original_ip_count + 1 or
+                    len(_ips) == self.seen_ips_counter):
+                return False
+            # If something changed, filter out floating IPs and check
+            # count of IPs
+            self.seen_ips_counter += len(_ips) - self.seen_ips_counter
             _fips = _get_server_floating_ips()
             _ips = [_ip for _ip in _ips if _ip not in _fips]
             LOG.debug("Wait for IP decrease. Fixed IPs still associated to "
@@ -452,6 +457,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       {'id': server['id'], 'ips': _ips})
             return len(_ips) == original_ip_count
 
+        self.seen_ips_counter = 0
         if not test_utils.call_until_true(
                 _wait_for_ip_decrease, CONF.compute.build_timeout,
                 CONF.compute.build_interval):
