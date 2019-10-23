@@ -408,7 +408,9 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _filtered_ips})
             # Number of filtered IPs must be considered
-            return len(_filtered_ips) == original_ip_count - (len(_ips) - len(_filtered_ips)) + 1
+            filtered_count = len(_ips) - len(_filtered_ips)
+            expected_count = original_ip_count - filtered_count + 1
+            return len(_filtered_ips) == expected_count
 
         self.seen_ips_counter = 0
         if not test_utils.call_until_true(
