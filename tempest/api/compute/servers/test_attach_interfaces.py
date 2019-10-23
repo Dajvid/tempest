@@ -356,6 +356,16 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             raise self.skipException("Only owner network supports "
                                      "creating interface by fixed ip.")
 
+        def _get_server_floating_ips():
+            _floating_ips = []
+            _server = self.os_primary.servers_client.show_server(
+                server['id'])['server']
+            for _ip_set in _server['addresses']:
+                for _ip in _server['addresses'][_ip_set]:
+                    if _ip['OS-EXT-IPS:type'] == 'floating':
+                        _floating_ips.append(_ip['addr'])
+            return _floating_ips
+
         # Add and Remove the fixed IP to server.
         server, ifs = self._create_server_get_interfaces()
         original_interface_count = len(ifs)  # This is the number of ports.
@@ -382,16 +392,6 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         # port).
         self.servers_client.add_fixed_ip(server['id'], networkId=network_id)
         # Wait for the ips count to increase by one.
-
-        def _get_server_floating_ips():
-            _floating_ips = []
-            _server = self.os_primary.servers_client.show_server(
-                server['id'])['server']
-            for _ip_set in _server['addresses']:
-                for _ip in _server['addresses'][_ip_set]:
-                    if _ip['OS-EXT-IPS:type'] == 'floating':
-                        _floating_ips.append(_ip['addr'])
-            return _floating_ips
 
         def _wait_for_ip_increase():
             _addresses = self.os_primary.servers_client.list_addresses(
