@@ -391,6 +391,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         # port).
         self.servers_client.add_fixed_ip(server['id'], networkId=network_id)
         # Wait for the ips count to increase by one.
+        seen_ips_counter = 0
 
         def _wait_for_ip_increase():
             _addresses = self.os_primary.servers_client.list_addresses(
@@ -411,7 +412,6 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       {'id': server['id'], 'ips': _ips})
             return len(_ips) == original_ip_count + 1
 
-        seen_ips_counter = 0
         if not test_utils.call_until_true(
                 _wait_for_ip_increase, CONF.compute.build_timeout,
                 CONF.compute.build_interval):
@@ -434,6 +434,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         self.servers_client.remove_fixed_ip(server['id'], address=fixed_ip)
         # Wait for the interface count to decrease by one.
 
+        seen_ips_counter = 0
         def _wait_for_ip_decrease():
             _addresses = self.os_primary.servers_client.list_addresses(
                 server['id'])['addresses']
@@ -454,7 +455,6 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       {'id': server['id'], 'ips': _ips})
             return len(_ips) == original_ip_count
 
-        seen_ips_counter = 0
         if not test_utils.call_until_true(
                 _wait_for_ip_decrease, CONF.compute.build_timeout,
                 CONF.compute.build_interval):
