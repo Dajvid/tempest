@@ -383,8 +383,8 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         # Remove floating IPs from the list of original IPs,
         # we don't really care about floating IPs in this test
         # and they would only complicate things later
-        fips = _get_server_floating_ips()
         original_ips = [_ip for _ip in original_ips if _ip not in fips]
+        fips = _get_server_floating_ips()
         original_ip_count = len(original_ips)
         self.assertGreater(original_ip_count, 0, addresses)  # at least 1
         network_id = ifs[0]['net_id']
