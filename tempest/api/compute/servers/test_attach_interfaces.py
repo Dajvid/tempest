@@ -380,8 +380,8 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                         _floating_ips.append(_ip['addr'])
             return _floating_ips
 
-        # Remove floating IPs from the list of original ips,
-        # we don't really care about floating ips in this test
+        # Remove floating IPs from the list of original IPs,
+        # we don't really care about floating IPs in this test
         # and they would only complicate things later
         fips = _get_server_floating_ips()
         original_ips = [_ip for _ip in original_ips if _ip not in fips]
@@ -446,8 +446,8 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             # If IPs didn't change yet, just skip this iteration
             if (len(_ips) == self.seen_ips_counter):
                 return False
-            # If something changed, filter out floating IPs and check
-            # count of IPs
+            # If count of IPs changed from last iteration,
+            # filter out floating IPs and check count of IPs
             self.seen_ips_counter += len(_ips) - self.seen_ips_counter
             _fips = _get_server_floating_ips()
             _ips = [_ip for _ip in _ips if _ip not in _fips]
