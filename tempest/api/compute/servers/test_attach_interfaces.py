@@ -392,31 +392,32 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         # fixed IP on the same network (and same port since we only have one
         # port).
         self.servers_client.add_fixed_ip(server['id'], networkId=network_id)
-        # Wait for the ips count to increase by one.
 
-        def _wait_for_ip_increase():
+        def _wait_for_ip_change(expected_count):
             _addresses = self.os_primary.servers_client.list_addresses(
                 server['id'])['addresses']
             _ips = [addr['addr'] for addr in list(_addresses.values())[0]]
-            LOG.debug("Wait for IP increase. All IPs still associated to "
+            LOG.debug("Wait for change of IPs. All IPs still associated to "
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
             # If no new IP popped up, just skip this iteration
             if len(_ips) == self.seen_ips_counter:
                 return False
-            # Lets remove any floating IP from the list and check count of IPs
-            self.seen_ips_counter += len(_ips) - self.seen_ips_counter
+            # Lets remove any floating IP from the list and check
+            # if count of ips is as expected.
+            self.seen_ips_counter = len(_ips)
             _fips = _get_server_floating_ips()
             _ips = [_ip for _ip in _ips if _ip not in _fips]
-            LOG.debug("Wait for IP increase. Fixed IPs still associated to "
+            LOG.debug("Wait for IP change. Fixed IPs still associated to "
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
-            return len(_ips) == original_ip_count + 1
+            return len(_ips) == expected_count
 
+        # Wait for the ips count to increase by one.
         self.seen_ips_counter = 0
         if not test_utils.call_until_true(
-                _wait_for_ip_increase, CONF.compute.build_timeout,
-                CONF.compute.build_interval):
+                _wait_for_ip_change, CONF.compute.build_timeout,
+                CONF.compute.build_interval, original_ip_count + 1):
             raise lib_exc.TimeoutException(
                 'Timed out while waiting for IP count to increase.')
 
@@ -434,31 +435,11 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             if fixed_ip is not None:
                 break
         self.servers_client.remove_fixed_ip(server['id'], address=fixed_ip)
+
         # Wait for the interface count to decrease by one.
-
-        def _wait_for_ip_decrease():
-            _addresses = self.os_primary.servers_client.list_addresses(
-                server['id'])['addresses']
-            _ips = [addr['addr'] for addr in list(_addresses.values())[0]]
-            LOG.debug("Wait for IP decrease. All IPs still associated to "
-                      "the server %(id)s: %(ips)s",
-                      {'id': server['id'], 'ips': _ips})
-            # If IPs didn't change yet, just skip this iteration
-            if len(_ips) == self.seen_ips_counter:
-                return False
-            # If count of IPs changed from last iteration,
-            # filter out floating IPs and check count of IPs
-            self.seen_ips_counter += len(_ips) - self.seen_ips_counter
-            _fips = _get_server_floating_ips()
-            _ips = [_ip for _ip in _ips if _ip not in _fips]
-            LOG.debug("Wait for IP decrease. Fixed IPs still associated to "
-                      "the server %(id)s: %(ips)s",
-                      {'id': server['id'], 'ips': _ips})
-            return len(_ips) == original_ip_count
-
         self.seen_ips_counter = 0
         if not test_utils.call_until_true(
-                _wait_for_ip_decrease, CONF.compute.build_timeout,
-                CONF.compute.build_interval):
+                _wait_for_ip_change, CONF.compute.build_timeout,
+                CONF.compute.build_interval, original_ip_count):
             raise lib_exc.TimeoutException(
                 'Timed out while waiting for IP count to decrease.')
