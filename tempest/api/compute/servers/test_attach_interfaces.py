@@ -383,8 +383,8 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         # Remove floating IPs from the list of original IPs,
         # we don't really care about floating IPs in this test
         # and they would only complicate things later
-        original_ips = [_ip for _ip in original_ips if _ip not in fips]
         fips = _get_server_floating_ips()
+        original_ips = [_ip for _ip in original_ips if _ip not in fips]
         original_ip_count = len(original_ips)
         self.assertGreater(original_ip_count, 0, addresses)  # at least 1
         network_id = ifs[0]['net_id']
@@ -444,7 +444,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
             # If IPs didn't change yet, just skip this iteration
-            if (len(_ips) == self.seen_ips_counter):
+            if len(_ips) == self.seen_ips_counter:
                 return False
             # If count of IPs changed from last iteration,
             # filter out floating IPs and check count of IPs
