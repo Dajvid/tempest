@@ -340,7 +340,6 @@ class AttachInterfacesTestJSON(AttachInterfacesTestBase):
 
 class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
     max_microversion = '2.43'
-    seen_ips_counter = 0
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('c7e0e60b-ee45-43d0-abeb-8596fd42a2f9')
@@ -393,7 +392,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         # port).
         self.servers_client.add_fixed_ip(server['id'], networkId=network_id)
 
-        def _wait_for_ip_change(expected_count):
+        def _wait_for_ip_change(expected_count, seen_ips):
             _addresses = self.os_primary.servers_client.list_addresses(
                 server['id'])['addresses']
             _ips = [addr['addr'] for addr in list(_addresses.values())[0]]
@@ -401,11 +400,11 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
             # If no new IP popped up, just skip this iteration
-            if len(_ips) == self.seen_ips_counter:
+            if seen_ips.issuperset(_ips):
                 return False
             # Lets remove any floating IP from the list and check
             # if count of ips is as expected.
-            self.seen_ips_counter = len(_ips)
+            seen_ips = set(_ips)
             _fips = _get_server_floating_ips()
             _ips = [_ip for _ip in _ips if _ip not in _fips]
             LOG.debug("Wait for IP change. Fixed IPs still associated to "
@@ -414,10 +413,10 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             return len(_ips) == expected_count
 
         # Wait for the ips count to increase by one.
-        self.seen_ips_counter = 0
+        seen_ips = set()
         if not test_utils.call_until_true(
                 _wait_for_ip_change, CONF.compute.build_timeout,
-                CONF.compute.build_interval, original_ip_count + 1):
+                CONF.compute.build_interval, (original_ip_count + 1, seen_ips)):
             raise lib_exc.TimeoutException(
                 'Timed out while waiting for IP count to increase.')
 
@@ -437,9 +436,8 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         self.servers_client.remove_fixed_ip(server['id'], address=fixed_ip)
 
         # Wait for the interface count to decrease by one.
-        self.seen_ips_counter = 0
         if not test_utils.call_until_true(
                 _wait_for_ip_change, CONF.compute.build_timeout,
-                CONF.compute.build_interval, original_ip_count):
+                CONF.compute.build_interval, original_ip_count, seen_ips):
             raise lib_exc.TimeoutException(
                 'Timed out while waiting for IP count to decrease.')
