@@ -416,7 +416,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         seen_ips = set()
         if not test_utils.call_until_true(
                 _wait_for_ip_change, CONF.compute.build_timeout,
-                CONF.compute.build_interval, (original_ip_count + 1, seen_ips)):
+                CONF.compute.build_interval, original_ip_count + 1, seen_ips):
             raise lib_exc.TimeoutException(
                 'Timed out while waiting for IP count to increase.')
 
