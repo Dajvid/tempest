@@ -348,7 +348,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         # NOTE(zhufl) By default only project that is admin or network owner
         # or project with role advsvc is authorised to add interfaces with
         # fixed-ip, so if we don't create network for each project, do not
-        # test
+        # test.
         if not (CONF.auth.use_dynamic_credentials and
                 CONF.auth.create_isolated_networks and
                 not CONF.network.shared_physical_network):
@@ -381,7 +381,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
 
         # Remove floating IPs from the list of original IPs,
         # we don't really care about floating IPs in this test
-        # and they would only complicate things later
+        # and they would only complicate things later.
         fips = _get_server_floating_ips()
         original_ips = [_ip for _ip in original_ips if _ip not in fips]
         original_ip_count = len(original_ips)
@@ -399,7 +399,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             LOG.debug("Wait for change of IPs. All IPs still associated to "
                       "the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
-            # If no new IP popped up, just skip this iteration
+            # If no new IP popped up, just skip this iteration.
             if seen_ips.issuperset(_ips):
                 return False
             # Lets remove any floating IP from the list and check
@@ -407,8 +407,8 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             seen_ips = set(_ips)
             _fips = _get_server_floating_ips()
             _ips = [_ip for _ip in _ips if _ip not in _fips]
-            LOG.debug("Wait for IP change. Fixed IPs still associated to "
-                      "the server %(id)s: %(ips)s",
+            LOG.debug("Wait for change of fixed IPs. All Fixed "
+                      "IPs still associated to the server %(id)s: %(ips)s",
                       {'id': server['id'], 'ips': _ips})
             return len(_ips) == expected_count
 
