@@ -374,7 +374,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
         # Keep track of the original addresses so we can know which IP is new.
         original_ips = [addr['addr'] for addr in list(addresses.values())[0]]
         # Make sure the floating IP possibly assigned during
-        # server creation is always present in the set of original ips
+        # server creation is always present in the set of original ips.
         original_ips = set(original_ips).union(fip)
         original_ip_count = len(original_ips)
         self.assertGreater(original_ip_count, 0, addresses)  # at least 1
@@ -388,7 +388,7 @@ class AttachInterfacesUnderV243Test(AttachInterfacesTestBase):
             _addresses = self.os_primary.servers_client.list_addresses(
                 server['id'])['addresses']
             _ips = set([addr['addr'] for addr in list(_addresses.values())[0]])
-            # make sure possible floating ip is always present in the set
+            # Make sure possible floating ip is always present in the set.
             _ips = _ips.union(fip)
             LOG.debug("Wait for change of IPs. All IPs still associated to "
                       "the server %(id)s: %(ips)s",
