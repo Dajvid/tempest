@@ -86,12 +86,16 @@ class AttachInterfacesTestBase(base.BaseV2ComputeTest):
         # apparently not enough? Add cleanup here.
         self.addCleanup(self.delete_server, server['id'])
         self._wait_for_validation(server, validation_resources)
+        try:
+            fip = validation_resources['floating_ip']['floating_ip_address']
+        except KeyError:
+            fip = None
         ifs = (self.interfaces_client.list_interfaces(server['id'])
                ['interfaceAttachments'])
         body = waiters.wait_for_interface_status(
             self.interfaces_client, server['id'], ifs[0]['port_id'], 'ACTIVE')
         ifs[0]['port_state'] = body['port_state']
-        return server, ifs
+        return server, ifs, fip
 
 
 class AttachInterfacesTestJSON(AttachInterfacesTestBase):
