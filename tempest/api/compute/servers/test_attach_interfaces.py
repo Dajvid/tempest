@@ -88,7 +88,7 @@ class AttachInterfacesTestBase(base.BaseV2ComputeTest):
         self._wait_for_validation(server, validation_resources)
         try:
             fip = set([validation_resources['floating_ip']
-                      ['floating_ip_address']])
+                                           ['floating_ip_address']])
         except KeyError:
             fip = ()
         ifs = (self.interfaces_client.list_interfaces(server['id'])
